@@ -1,1 +1,91 @@
+# 爬虫思路
+# 1.明确需求（Website）
+# 2.发送请求（Request)
+# 3.获取数据（Response)
+# 4.解析数据（Parse）
+# 5.存储数据（Database）
 
+"""
+一、数据来源分析
+    1.明确需求：
+        - 明确采集网站
+            https://music.163.com/#/discover/top;ist
+
+        - 明确采集数据
+            商品评论相关的信息
+    2.分析 商品评论相关的信息 请求哪个链接可以获取
+            浏览器自带工具：开发者 <一定要分析清除采集的数据在什么位置>
+            - 打开开发者工具：F12 / 右键点击检查选择network
+            - 点击第二页评论区 找到对应数据包（Fetch/XHR)
+
+
+
+二、代码实现步骤
+    1.发送请求，模拟浏览器对于URL地址发送请求
+    2.获取数据，获取服务器返回相应数据 response
+    3.解析数据，提取我们想要的数据内容--》评论信息
+    4.保存数据，把评论区信息保存到表格文件里面
+
+"""
+
+# 导入数据请求模块
+import requests
+import re
+
+"""
+1.发送请求，模拟浏览器对于URL地址发送请求
+    - 请求链接<确定请求的链接正确>
+        请求链接过长时，可以分段写
+        问号前面：url
+        问号后面：请求参数/查询参数
+        
+    - 模拟浏览器<注意防止反爬>
+    - 发送请求<请求方式>
+    
+批量替换：
+    1.选中内容, ctrl + R
+    2.勾选.*输入正则命令
+        (.*?):(.*)
+        '$1':'$2',
+
+"""
+headers = {
+    'Referer': 'https://music.163.com/',
+    'Cookie': 'NTES_P_UTID=vwGQYuTVyd3M2wgP9UrvnNpQWUCfed2o|1693113904; NTES_SESS=bu6y6SEYNusaqFeNFbP3gd5VM1kD9zku.XfY6aiJKRwoNK67NXivTdYCG7oWttepiX8_TFD_vjL.YTBPGptGB6uawi6L_OfhNVmbbLeeKS7NHbxOaq4Gd3MIpkAvbkLXTIkagLlI__rnRYo_J6v8abEs1WmxqYDlpCCRpxD.B4fQ_f6AhPpfqqV6hIbHcUelBVKaSVtoTHX1d; S_INFO=1693113904|0|3&80##|qy818qy; P_INFO=qy818qy@163.com|1693113904|0|mail163|00&99|shd&1693062203&mbmail_android#shd&370100#10#0#0|&0|mail163&mbmail_android|qy818qy@163.com; nts_mail_user=qy818qy@163.com:-1:1; _iuqxldmzr_=32; _ntes_nnid=a5ceaa909fde914975fff1068b131ee7,1693113910348; _ntes_nuid=a5ceaa909fde914975fff1068b131ee7; playliststatus=visible; WEVNSM=1.0.0; WNMCID=soiyzc.1693113911972.01.0; WM_TID=XSMllv%2F5Rn1BFBARUFeAiUt2PjVQ8cR2; ntes_utid=tid._.OuzogxUG4w5AUkREFBLBmR9ieiVVuCrP._.0; NMTID=00OgDgbqnoR_9N9D0-FsCmPs_0EuqcAAAGKNXQOvw; sDeviceId=YD-7EMyQVreHd5AA1ABQVLRmBo2ezBE6Svj; MUSIC_EMAIL_U=bbb9d71274e4fa36eff3b112af2956065e9b5233b736633dafd8367184f18aa0b1281013cd8b6c594ba37b4e078ede4c8eb5eaf0ffc500ee26f03d53a23f3c6367f04f628e7546c1d4dbf082a8813684; JSESSIONID-WYYY=zDpq9JzvTUYJc8TTUeYmtyM3qyUY1PhK9u3H0NxYQII73g%5C0MpOglMbPQcVVI3J%2F%2BvEpgelvUYofORl1JqOr6Z0E9d0l%2F1pCGMMSyEFldG%5ChwK9I%2FrsyV8%2FCvP9yBzYcFjFSOgdcP7g%2FJh8%2FiamqFhaNVKwQbuo%2F1gHvFe2zb%2ByGM%2FW1%3A1693362198454; WM_NI=vhaUvWdFjUKYg0th68EyE9dXJtzDazJzso0YGR4ZQIhvGvxKRRERxpABC%2BMAXcOtK7UExXn2vl96tYY9Q0ttnCNn5W%2FgzC2rYhUoAab3ezeUbS9T%2F2i62mcRorQSwZD0SFc%3D; WM_NIKE=9ca17ae2e6ffcda170e2e6ee93f779fca898d8d04387928ab7c45a869a9b83d839919ba9b9cb46b59e8b88b42af0fea7c3b92ab6b8afb6f55da89aa6b6ca53a5f0bc89b53487a78bdae7548aacb6a5e4728aa6bd90b353858efcbbd443acaa8997fb41928e8bb3fb7c839e8dccd04b9cbd8195ca3d979bb8b9ed3ab6b4f7d7f7539be79fd1f780ae9d828fb85dedb9b6a4b17a9bb89b90c46ba2edab9be85fa28df7b5ae3aabeafe8ee25aadae9fb4f65288f09da7e237e2a3; playerid=12075296',
+
+              'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36 Edg/116.0.1938.54'
+
+}
+
+# 请求链接
+url = 'https://music.163.com/discover/toplist'
+# 1.发送请求
+response = requests.get(url=url, headers=headers)
+
+# 请求参数 --》 字典数据类型
+# 2.获取数据
+# print(response.text)
+html_data = response.text
+#3.解析数据
+#正则表达式：是一种搜索功能 ctrl+F
+#使用：
+#例如：id=204.*5276 有一个数字忘记了
+#.替代一个字符
+#* 匹配前面表达式多次
+#.* 匹配多个字符
+#？非贪婪匹配符
+#aaaaaa.*?bbbbb
+#<li><a href="/song\?id=.*？">.*？</a></li>
+
+info_list = re.findall('<li><a href="/song\?id=(.*?)">(.*?)</a></li>', html_data)
+
+# print(info_list)
+for info in info_list:
+    music_id = info[0]
+    music_name = info[1]
+    #官方提供的接口：http://music.163.com/song/media/outer/url?id=
+    music_url = 'http://music.163.com/song/media/outer/url?id=' + music_id
+    print(music_name, music_url)
+    #4.保存数据
+    music_data = requests.get(music_url).content
+    open(f'music/{music_name}.mp3', mode='wb').write(music_data)
